@@ -15,7 +15,6 @@
  * legitimate user because of a transient backend error.
  */
 
-import { createHmac, timingSafeEqual } from 'node:crypto';
 import { isRevoked, recordInstall } from './kv.js';
 
 export const EXPECTED_PACKAGE = '@crysnovax/baileys';
@@ -34,12 +33,33 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), {
     }
 });
 
-/** HMAC-SHA256 signature over the stable attestation fields. */
-export const signAttestation = (payload, secret) => {
+const toHex = (bytes) => {
+    let out = '';
+    for (const byte of bytes) {
+        out += byte.toString(16).padStart(2, '0');
+    }
+    return out;
+};
+
+/**
+ * HMAC-SHA256 signature over the stable attestation fields.
+ *
+ * Uses the Web Crypto API (crypto.subtle) — the only crypto available on
+ * Cloudflare Workers without the nodejs_compat flag.
+ */
+export const signAttestation = async (payload, secret) => {
     const { sig, ...rest } = payload;
     const canonical = JSON.stringify(rest);
-    const digest = createHmac('sha256', secret).update(canonical).digest('hex');
-    return { ...rest, sig: digest };
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+        'raw',
+        enc.encode(secret),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+    );
+    const mac = await crypto.subtle.sign('HMAC', key, enc.encode(canonical));
+    return { ...rest, sig: toHex(new Uint8Array(mac)) };
 };
 
 /** Constant-time check of a presented token against the expected one. */
@@ -47,9 +67,14 @@ export const safeEqual = (a, b) => {
     if (typeof a !== 'string' || typeof b !== 'string' || a.length === 0 || b.length === 0) {
         return false;
     }
-    const bufA = Buffer.from(a);
-    const bufB = Buffer.from(b);
-    return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
+    // XOR every character of the longer string (missing chars count as 0)
+    // so runtime doesn't leak where the strings first differ.
+    let diff = a.length ^ b.length;
+    const len = Math.max(a.length, b.length);
+    for (let i = 0; i < len; i++) {
+        diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+    }
+    return diff === 0;
 };
 
 const readBody = async (request) => {
@@ -87,7 +112,7 @@ export const handleVerify = async (request, env) => {
             version,
             status: 'rebranded'
         });
-        return json(signAttestation({
+        return json(await signAttestation({
             status: 'rebranded',
             fingerprint,
             iat: Date.now()
@@ -100,7 +125,7 @@ export const handleVerify = async (request, env) => {
     const owners = (env.OWNER_FINGERPRINTS || '').split(',').map(s => s.trim()).filter(Boolean);
     if (owners.includes(fingerprint)) {
         const now = Date.now();
-        return json(signAttestation({
+        return json(await signAttestation({
             status: 'genuine',
             fingerprint,
             iat: now,
@@ -117,7 +142,7 @@ export const handleVerify = async (request, env) => {
     });
 
     const now = Date.now();
-    return json(signAttestation({
+    return json(await signAttestation({
         status: revoked ? 'revoked' : 'genuine',
         fingerprint,
         iat: now,
