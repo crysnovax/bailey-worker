@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { handleVerify, signAttestation, safeEqual, EXPECTED_PACKAGE } from '../src/attest.js';
-import { handleAdmin } from '../src/admin.js';
-import { rateLimit, _reset } from '../src/rate-limit.js';
+import { handleVerify, signAttestation, safeEqual, EXPECTED_PACKAGE } from './src/attest.js';
+import { handleAdmin } from './src/admin.js';
+import { rateLimit, _reset } from './src/rate-limit.js';
 
 /** In-memory KV stand-in so tests run without Cloudflare bindings. */
 const makeKv = () => {
@@ -49,7 +49,7 @@ test('genuine install gets a signed genuine attestation', async () => {
     assert.ok(body.exp > body.iat);
     assert.equal(typeof body.sig, 'string');
     // signature is deterministic over the canonical payload
-    const reSigned = signAttestation({ status: 'genuine', fingerprint: VALID_FP, iat: body.iat, exp: body.exp }, 'test-secret');
+    const reSigned = await signAttestation({ status: 'genuine', fingerprint: VALID_FP, iat: body.iat, exp: body.exp }, 'test-secret');
     assert.equal(reSigned.sig, body.sig);
 });
 
