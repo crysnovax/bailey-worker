@@ -1,0 +1,8 @@
+# Copy to .dev.vars for `wrangler dev` (never commit .dev.vars)
+ADMIN_TOKEN=change-me-long-random-string
+ATTEST_SECRET=change-me-another-long-random-string
+ADMIN_OPERATOR=crysnovax
+# Comma-separated fingerprints that are ALWAYS genuine (your own machines).
+# See README "Owner escape hatch" for how to compute your fingerprint.
+OWNER_FINGERPRINTS=
+
