@@ -1,6 +1,6 @@
 /**
  * bailey.crysnovax.link — attestation & revocation API for @crysnovax/baileys.
- *h
+ *hy
  * Routes:
  *   GET  /api/v1/health                → liveness
  *   POST /api/v1/verify                → client attestation (see src/attest.js)
