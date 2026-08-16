@@ -1,2 +1,0 @@
-# bailey-worker
-##
