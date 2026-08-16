@@ -19,7 +19,7 @@ workers_dev = true
 #  you rely on revocations.)
 [[kv_namespaces]]
 binding = "BAILEY_KV"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "f38bd23530214519a4136e8c5853991b"
 preview_id = "REPLACE_WITH_PREVIEW_KV_NAMESPACE_ID"
 
 [observability]
