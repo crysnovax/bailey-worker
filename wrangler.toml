@@ -1,0 +1,27 @@
+name = "bailey-crysnovax"
+main = "src/index.js"
+compatibility_date = "2025-06-01"
+workers_dev = true
+
+# ─── Custom domain ────────────────────────────────────────────────────────────
+# After the first deploy, add bailey.crysnovax.link from the Cloudflare
+# dashboard (Workers & Routes → your worker → Settings → Domains & Routes)
+# or uncomment and set your zone here:
+# routes = [
+#   { pattern = "bailey.crysnovax.link", custom_domain = true }
+# ]
+
+# ─── KV namespace (revocations + install registry) ────────────────────────────
+# Create it once, then paste the IDs:
+#   npx wrangler kv namespace create BAILEY_KV
+# (The worker fails open when KV is unavailable, so a first deploy without
+#  the namespace still serves "genuine" attestations — set this up before
+#  you rely on revocations.)
+[[kv_namespaces]]
+binding = "BAILEY_KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+preview_id = "REPLACE_WITH_PREVIEW_KV_NAMESPACE_ID"
+
+[observability]
+enabled = true
+
